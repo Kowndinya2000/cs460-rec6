@@ -11,3 +11,5 @@ time.sleep(1)
 config = {'pick':  ['yellow block', 'green block', 'blue block'],
           'place': ['yellow bowl', 'green bowl', 'blue bowl']}
 env.reset(config)
+time.sleep(1000)
+
