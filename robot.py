@@ -461,14 +461,37 @@ class PickPlaceEnv():
     aspect_ratio = image_size[1] / image_size[0]
     
     # TODO: Compute the Projection Matrix
-    
-    # TODO: Render with OpenGL camera settings.
+    projm = pybullet.computeProjectionMatrixFOV(fovh, aspect_ratio, znear, zfar)
 
+
+    # TODO: Render with OpenGL camera settings.
+    _, _, color, depth, segm = pybullet.getCameraImage(
+      width=image_size[1],
+      height=image_size[0],
+      viewMatrix=viewm,
+      projectionMatrix=projm,
+      shadow=1,
+      flags=pybullet.ER_SEGMENTATION_MASK_OBJECT_AND_LINKINDEX,
+      renderer=pybullet.ER_BULLET_HARDWARE_OPENGL
+    )
     # TODO: Get color image.
-    
+    color_image_size = (image_size[0], image_size[1], 4)
+    color = np.array(color, dtype=np.uint8).reshape(color_image_size)
+    color = color[:, :, :3] # discard the alpha channel
+    if noise:
+      color = np.int32(color)
+      color += np.int32(np.random.normal(0, 3, color.shape))
+      color = np.uint8(np.clip(color, 0, 255))
 
     # TODO: Get depth image.
-   
+    depth_image_size = (image_size[0], image_size[1])
+    zbuffer = np.float32(depth).reshape(depth_image_size)
+    depth = (zfar + znear - (2*zbuffer - 1)* (zfar-znear))
+    depth = (2 * zfar * znear)/depth 
+    if noise:
+      depth += np.random.normal(0, 0.003, depth.shape)
+
+    intrinsics = np.float32(intrinsics).reshape(3, 3)   
     return color, depth, position, orientation, intrinsics
 
   def get_pointcloud(self, depth, intrinsics):
